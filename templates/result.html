@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Financial Risk Dashboard</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- ================= HEADER ================= -->
+    <h1>AI-Based Financial Risk & Forensic Analysis</h1>
+    <p class="subtitle">
+        AI-assisted forensic analysis using financial statement behaviour
+    </p>
+
+    <!-- ================= OVERALL SUMMARY ================= -->
+    <h2>Overall Risk Summary</h2>
+    <p><strong>Risk Level:</strong> {{ risk }}</p>
+    <p><strong>Risk Score:</strong> {{ score }} / 100</p>
+    <p><strong>Red Flags Detected:</strong> {{ "Yes" if flags else "No" }}</p>
+
+    <hr>
+
+    <!-- ================= GROWTH QUALITY ================= -->
+    <h2>Growth Quality Assessment</h2>
+    <p><strong>Growth Classification:</strong> {{ ratios["Growth_Quality"] }}</p>
+
+    <p class="subtitle">
+        {% if ratios["Growth_Quality"] == "Healthy Growth" %}
+            Revenue growth is supported by operating cash flows, indicating sustainable expansion.
+        {% elif ratios["Growth_Quality"] == "Aggressive (Credit-Driven) Growth" %}
+            Revenue growth appears to be driven by credit expansion rather than cash realisation.
+        {% elif ratios["Growth_Quality"] == "Unsustainable Growth" %}
+            Revenue growth is not supported by operating cash flows, raising sustainability concerns.
+        {% else %}
+            The company does not exhibit material growth in the latest period.
+        {% endif %}
+    </p>
+
+    <hr>
+
+    <!-- ================= RISK BREAKDOWN ================= -->
+    <h2>Risk Area Breakdown</h2>
+
+    <table>
+        <tr>
+            <th>Risk Area</th>
+            <th>Status</th>
+        </tr>
+        {% for area, status in categories.items() %}
+        <tr>
+            <td>{{ area }}</td>
+            <td class="{{ status }}">{{ status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <hr>
+
+    <!-- ================= KEY RATIOS ================= -->
+    <h2>Key Financial Ratios & Interpretation (FY-3)</h2>
+
+    <table>
+        <tr>
+            <th>Ratio</th>
+            <th>Value</th>
+            <th>Interpretation</th>
+        </tr>
+
+        <tr>
+            <td>CFO / Net Profit</td>
+            <td>{{ "%.2f"|format(ratios["CFO_to_Profit"]) }}</td>
+            <td>
+                {% if ratios["CFO_to_Profit"] >= 1 %}
+                    Profits are well supported by operating cash flows.
+                {% else %}
+                    Weak cash support for reported profits.
+                {% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Accrual Intensity</td>
+            <td>{{ "%.2f"|format(ratios["Accrual_Intensity"]) }}</td>
+            <td>
+                {% if ratios["Accrual_Intensity"] < 0.05 %}
+                    Low reliance on accrual-based earnings.
+                {% else %}
+                    Elevated reliance on accounting accruals.
+                {% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Receivables / Revenue</td>
+            <td>{{ "%.2f"|format(ratios["Receivables_to_Revenue"]) }}</td>
+            <td>
+                {% if ratios["Receivables_to_Revenue"] < 0.25 %}
+                    Receivables appear within a normal range.
+                {% else %}
+                    Potential collection or revenue quality risk.
+                {% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Debt / Revenue</td>
+            <td>{{ "%.2f"|format(ratios["Debt_to_Revenue"]) }}</td>
+            <td>
+                {% if ratios["Debt_to_Revenue"] < 1 %}
+                    Leverage appears manageable.
+                {% else %}
+                    Elevated financial leverage pressure.
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <hr>
+
+    <!-- ================= EARNINGS SMOOTHNESS ================= -->
+    <h2>Earnings Smoothness Analysis</h2>
+
+    <p>
+        {% if "Reported profits appear unusually smooth relative to revenue volatility" in flags %}
+            Reported profits display unusually low volatility relative to revenue movements, which may indicate earnings smoothing through accounting adjustments.
+        {% else %}
+            Profit movements broadly align with underlying revenue behaviour, suggesting no abnormal earnings smoothing.
+        {% endif %}
+    </p>
+
+    <hr>
+
+    <!-- ================= RED FLAGS ================= -->
+    <h2>Identified Forensic Red Flags</h2>
+
+    {% if flags %}
+        <ul>
+            {% for f in flags %}
+            <li>{{ f }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No material forensic red flags detected.</p>
+    {% endif %}
+
+    <hr>
+
+    <!-- ================= CHARTS ================= -->
+    <h2>Three-Year Financial Trends</h2>
+    <canvas id="trendChart" height="120"></canvas>
+
+    <hr>
+
+    <!-- ================= AI INTERPRETATION ================= -->
+    <h2>AI Interpretation</h2>
+    <p>{{ explanation }}</p>
+
+    <hr>
+
+    <!-- ================= SUGGESTIONS ================= -->
+    <h2>Suggested Actions (AI-Assisted)</h2>
+
+    {% if suggestions %}
+        <ul>
+            {% for s in suggestions %}
+            <li>{{ s }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No immediate action required. Continue routine financial monitoring.</p>
+    {% endif %}
+
+    <br>
+    <a href="/">← Analyze another company</a>
+
+</div>
+
+<!-- ================= CHART SCRIPT ================= -->
+<script>
+new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+        labels: ['FY-1', 'FY-2', 'FY-3'],
+        datasets: [
+            { label: 'Revenue', data: {{ data["Revenue"] }} },
+            { label: 'Receivables', data: {{ data["Receivables"] }} },
+            { label: 'Net Profit', data: {{ data["Profit"] }} },
+            { label: 'CFO', data: {{ data["CFO"] }} }
+        ]
+    },
+    options: {
+        plugins: {
+            legend: { position: 'bottom' }
+        }
+    }
+});
+</script>
+
+</body>
+</html>
+
+
